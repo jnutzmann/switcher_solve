@@ -3,7 +3,7 @@
 
 function [Ia Ib Ic V1 V2 V3 VN] = foc(IPeak, VqSet, Vbus, draw_plot)
 
-    t = 0:0.05:1;
+    t = 0:0.01:1;
     w = 2 * pi;
 
     Ia = cos(w*t) * IPeak;
@@ -32,8 +32,8 @@ function [Ia Ib Ic V1 V2 V3 VN] = foc(IPeak, VqSet, Vbus, draw_plot)
     %Va = Va*0.5;
     %Vb = Vb*0.5;
     %Vc = Vc*0.5;
-
-    Vk = (( max([Va; Vb; Vc])' + min([Va; Vb; Vc])' ) * 0.5);
+    
+    Vk = (( max([Va; Vb; Vc])' + min([Va; Vb; Vc])' ) * 0.5);    
 
     V1 = (Va - Vk')/Vbus+0.5;
     V2 = (Vb - Vk')/Vbus+0.5;
@@ -41,33 +41,42 @@ function [Ia Ib Ic V1 V2 V3 VN] = foc(IPeak, VqSet, Vbus, draw_plot)
 
     VN = (V1 + V2 + V3) / 3;     
     
+    figure;
+    
     if (draw_plot)
         subplot(331);
         plot(t,Ia,t,Ib,t,Ic);
+        grid on; grid minor;
         legend('Ia','Ib','Ic');
 
         subplot(334);
         plot(t,Ialpha,t,Ibeta);
+        grid on; grid minor;
         legend('I\alpha','I\beta');
 
         subplot(337);
         plot(t,Id,t,Iq);
+        grid on; grid minor;
         legend('Id','Iq');
 
         subplot(338);
         plot(t,Vd,t,Vq);
+        grid on; grid minor;
         legend('Vd','Vq');
 
         subplot(335);
         plot(t,Valpha,t,Vbeta);
+        grid on; grid minor;
         legend('V\alpha','V\beta');
 
         subplot(332);
         plot(t,Va,t,Vb,t,Vc);
+        grid on; grid minor;
         legend('Va','Vb','Vc');
 
         subplot(333);
-        plot(t,V1*Vbus,t,V2*Vbus,t,V3*Vbus,t,VN*Vbus);
+        plot(t,V1.*Vbus,t,V2.*Vbus,t,V3.*Vbus,t,VN.*Vbus);
+        grid on; grid minor;
         legend('V1','V2','V3','VN')
     end
 end

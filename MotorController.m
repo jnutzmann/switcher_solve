@@ -16,7 +16,7 @@ classdef MotorController
         function [P_loss, P_switching_loss, P_gate_drive, P_reverse, P_conduction] ...
                 = Loss(mc, Vbus, Vout, Vn, Iout, show_plots)
             
-            % Find the ripple current
+            % Find the ripple current (per phase)
             Iripple = (Vbus-Vn).*(Vout./Vbus)*1/mc.Fs/mc.motor.L_LN;
             %fprintf('%.3f\n',Iripple);
             
@@ -32,7 +32,7 @@ classdef MotorController
 
             % Timestep for gate-drive charging
             dt = 10e-10;
-            t = 0:dt:0.1e-6;
+            t = 0:dt:0.15e-6;
 
             % Specify initial conditions for on and off.
             Ig_on = zeros(1,length(t));
@@ -164,12 +164,23 @@ classdef MotorController
                 xlabel('Time (ns)','fontweight','bold');
                 grid on;
             end
+            
+            % Switching loss is only on the high side FET during positive
+            % current and low side FET during negative current on both turn
+            % off and turn on.
+            P_switching_loss = (trapz(time_on,P_on) + trapz(time_off,P_off)) * mc.Fs * 3;
+            
+            % We see a gate drive loss for each FET
+            P_gate_drive = (trapz(t,Ig_off*mc.VGateDrive) + trapz(t,Ig_on*mc.VGateDrive)) * mc.N * mc.Fs * 2 * 3;
+            
+            % Reverse recovery losses happen twice per cycle for the bottom
+            % side FET or top side during negative current.
+            P_reverse = mc.mosfet.Qrr * mc.Fs * Vbus *  mc.N * 2 * 3;
+            
+            % Conduction losses for each phase (Iavg + rms ripple)
+            P_conduction = (Iavg+abs(Iripple)/sqrt(3))^2 * (mc.mosfet.RdsOn/mc.N) * 3;
 
-            P_switching_loss = (trapz(time_on,P_on) + trapz(time_off,P_off))*mc.Fs;
-            P_gate_drive     = (trapz(t,Ig_off*mc.VGateDrive) + trapz(t,Ig_on*mc.VGateDrive))*mc.N*mc.Fs*2;
-            P_reverse = mc.mosfet.Qrr * mc.Fs * Vbus *  mc.N;
-            P_conduction = Iavg^2 * (mc.mosfet.RdsOn/mc.N);
-
+            % total loss is sum of all other losses
             P_loss = P_switching_loss + P_gate_drive + P_conduction + P_reverse;
             
         end
